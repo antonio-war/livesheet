@@ -1,16 +1,10 @@
-# This is a sample Python script.
+import functions_framework
 
-# Press ⌃R to execute it or replace it with your code.
-# Press Double ⇧ to search everywhere for classes, files, tool windows, actions, and settings.
+CLOUD = False
 
-
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press ⌘F8 to toggle the breakpoint.
-
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+@functions_framework.http
+def image_to_text(request):
+    request_body = request.json
+    bpm = request_body["bpm"]
+    image_b64 = request_body["image"]
+    return "Hello World!", 200
