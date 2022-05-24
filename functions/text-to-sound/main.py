@@ -9,8 +9,11 @@ CLOUD = False
 @functions_framework.http
 def text_to_sound(request):
     request_body = request.json
-    output_sound = create_sound(request_body["id"], request_body["notes"])
-    return "", 200
+    output_path = create_sound(request_body["id"], request_body["notes"])
+    if output_path != None:
+        return output_path, 200
+    else:
+        return "", 500
 
 
 def create_sound(filename, notes):
@@ -90,7 +93,11 @@ def create_sound(filename, notes):
                             curr_sound = curr_sound[0:time_sixteenth * 1500]
                 if curr_sound != None:
                     prev_sound = prev_sound + curr_sound
+    else:
+        return None
 
-    if not CLOUD:
+    if CLOUD:
+        print("Da implementare codice Cloud")
+    else:
         prev_sound.export(os.getcwd() + results_path + filename + extension, format="wav")
-    return prev_sound
+        return os.getcwd() + results_path + filename + extension
