@@ -9,15 +9,14 @@ CLOUD = False
 @functions_framework.http
 def text_to_sound(request):
     request_body = request.json
-    output_path = create_sound(request_body["id"], request_body["notes"])
+    output_path = create_sound(request_body["id"], request_body["notes"], request_body["bpm"])
     if output_path != None:
         return output_path, 200
     else:
         return "", 500
 
 
-def create_sound(filename, notes):
-    bpm = 120
+def create_sound(filename, notes, bpm):
     extension = ".wav"
 
     if CLOUD:
