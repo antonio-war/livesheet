@@ -1,17 +1,16 @@
 import base64, io, cv2
 import numpy as np
 from PIL import Image, ImageFilter
-import functions_framework
 import tensorflow as tf
+import functions_framework
 
 @functions_framework.http
-def hello(request):
+def image_to_text(request):
     im_b64 = request.json['image']
-    bpm = request.json['bpm']
     img_bytes = base64.b64decode(im_b64.encode('utf-8'))
     model = "semantic_model.meta"
     voc_file = "vocabulary_semantic.txt"
-    
+
     tf.compat.v1.reset_default_graph()
     sess = tf.compat.v1.InteractiveSession()
     tf.compat.v1.disable_eager_execution()
@@ -32,11 +31,14 @@ def hello(request):
 
     image_for_prediction = pre_processing(img_bytes, HEIGHT)
     seq_lenghts = [image_for_prediction.shape[2] / WIDTH_REDUCTION]
-    prediction = sess.run(decoded, feed_dict={input:image_for_prediction, seq_len: seq_lenghts, rnn_keep_prob: 1.0})
+    prediction = sess.run(decoded, feed_dict={input: image_for_prediction, seq_len: seq_lenghts, rnn_keep_prob: 1.0})
     str_predictions = sparse_tensor_to_strs(prediction)
     array_of_notes = from_prediction_to_note(str_predictions, voc_file)
-    print("ritorna")
-    return {'array_of_notes' : array_of_notes}
+    if array_of_notes is not None:
+        return {'array_of_notes': array_of_notes}, 200
+    else:
+        return "", 500
+
 
 def pre_processing(file, height):
     image = Image.open(io.BytesIO(file)).convert('L')
@@ -47,8 +49,10 @@ def pre_processing(file, height):
     image = np.asarray(image).reshape(1, image.shape[0], image.shape[1], 1)
     return image
 
+
 def normalize(image):
     return (255. - image) / 255.
+
 
 def resize(image, height):
     width = int(float(height * image.shape[1]) / image.shape[0])
@@ -74,6 +78,7 @@ def sparse_tensor_to_strs(sparse_tensor):
     strs[b] = string
     return strs
 
+
 def from_prediction_to_note(str_predictions, voc_file):
     array_of_notes = []
     dict_file = open(voc_file, 'r')
@@ -88,4 +93,3 @@ def from_prediction_to_note(str_predictions, voc_file):
         figure = int2word[w]
         array_of_notes.append(figure)
     return array_of_notes
-
