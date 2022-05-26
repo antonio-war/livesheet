@@ -9,9 +9,9 @@ def text_to_sound(request):
     request_body = request.json
     sound = create_sound(request_body["notes"], request_body["bpm"])
     if sound is not None:
-        sound.export("sound.wav", format="wav")
-        if os.path.isfile("sound.wav"):
-            return send_file("sound.wav", mimetype="audio/wav")
+        sound.export("/tmp/sound.wav", format="wav")
+        if os.path.isfile("/tmp/sound.wav"):
+            return send_file("/tmp/sound.wav", mimetype="audio/wav")
         else:
             return "", 500
     else:
