@@ -2,28 +2,25 @@ import os
 import functions_framework
 from pydub import AudioSegment
 import re
-
-CLOUD = False
+from flask import send_file
 
 @functions_framework.http
 def text_to_sound(request):
     request_body = request.json
-    output_path = create_sound(request_body["id"], request_body["notes"], request_body["bpm"])
-    if output_path != None:
-        return output_path, 200
+    sound = create_sound(request_body["notes"], request_body["bpm"])
+    if sound is not None:
+        sound.export("sound.wav", format="wav")
+        if os.path.isfile("sound.wav"):
+            return send_file(sound, mimetype="audio/wav")
+        else:
+            return "", 500
     else:
         return "", 500
 
 
-def create_sound(filename, notes, bpm):
+def create_sound(notes, bpm):
     extension = ".wav"
-
-    if CLOUD:
-        print("Da implementare codice Cloud")
-    else:
-        os.chdir("/Users/admin/Desktop/livesheet/resources")
-        samples_path = "/samples/"
-        results_path = "/results/"
+    samples_path = "samples/"
 
     time_quarter = (60.0 / bpm) + 0.2
     time_half = time_quarter * 2
@@ -31,29 +28,15 @@ def create_sound(filename, notes, bpm):
     time_sixteenth = time_eight / 4
     time_whole = time_quarter * 4
 
-    if CLOUD:
-        print("Da implementare codice Cloud")
-    else:
-        if os.path.isfile(os.getcwd() + samples_path + "rest" + extension):
-            prev_sound = AudioSegment.from_wav(os.getcwd() + samples_path + "rest" + extension)[0:0]
-            curr_sound = AudioSegment.from_wav(os.getcwd() + samples_path + "rest" + extension)[0:0]
-        else:
-            prev_sound = None
-            curr_sound = None
-
-    if prev_sound != None:
+    if os.path.isfile(samples_path + "rest" + extension):
+        prev_sound = AudioSegment.from_wav(samples_path + "rest" + extension)[0:0]
+        curr_sound = AudioSegment.from_wav(samples_path + "rest" + extension)[0:0]
         for note in notes:
             splitted = re.split('-|_', note)
             if splitted[0] == "note" or splitted[0] == "rest":
                 if splitted[0] == 'note':
-                    if CLOUD:
-                        print("Da implementare codice Cloud")
-                    else:
-                        if os.path.isfile(os.getcwd() + samples_path + splitted[1] + extension):
-                            curr_sound = AudioSegment.from_wav(os.getcwd() + samples_path + splitted[1] + extension)
-                        else:
-                            curr_sound = None
-                    if curr_sound != None:
+                    if os.path.isfile(samples_path + splitted[1] + extension):
+                        curr_sound = AudioSegment.from_wav(samples_path + splitted[1] + extension)
                         if splitted[2] == 'whole':
                             curr_sound = curr_sound[0:time_whole * 1000]
                         elif splitted[2] == 'half':
@@ -72,15 +55,11 @@ def create_sound(filename, notes, bpm):
                             curr_sound = curr_sound[0:time_sixteenth * 1500]
                         else:
                             curr_sound = curr_sound[0:(time_sixteenth + time_sixteenth / 2) * 1500]
-                elif splitted[0] == 'rest':
-                    if CLOUD:
-                        print("Da implementare codice Cloud")
                     else:
-                        if os.path.isfile(os.getcwd() + samples_path + splitted[0] + extension):
-                            curr_sound = AudioSegment.from_wav(os.getcwd() + samples_path + splitted[0] + extension)
-                        else:
-                            curr_sound = None
-                    if curr_sound != None:
+                        curr_sound = None
+                elif splitted[0] == 'rest':
+                    if os.path.isfile(samples_path + splitted[0] + extension):
+                        curr_sound = AudioSegment.from_wav(samples_path + splitted[0] + extension)
                         if splitted[1] == 'half':
                             curr_sound = curr_sound[0:time_half * 1000]
                         elif splitted[1] == 'quarter':
@@ -89,13 +68,12 @@ def create_sound(filename, notes, bpm):
                             curr_sound = curr_sound[0:time_eight * 1500]
                         else:
                             curr_sound = curr_sound[0:time_sixteenth * 1500]
-                if curr_sound != None:
+                    else:
+                        curr_sound = None
+                if curr_sound is not None:
                     prev_sound = prev_sound + curr_sound
+        return prev_sound
     else:
         return None
 
-    if CLOUD:
-        print("Da implementare codice Cloud")
-    else:
-        prev_sound.export(os.getcwd() + results_path + filename + extension, format="wav")
-        return os.getcwd() + results_path + filename + extension
+
