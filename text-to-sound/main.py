@@ -11,7 +11,7 @@ def text_to_sound(request):
     if sound is not None:
         sound.export("sound.wav", format="wav")
         if os.path.isfile("sound.wav"):
-            return send_file(sound, mimetype="audio/wav")
+            return send_file("sound.wav", mimetype="audio/wav")
         else:
             return "", 500
     else:
