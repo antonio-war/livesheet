@@ -2,16 +2,17 @@ import os
 import functions_framework
 from pydub import AudioSegment
 import re
-from flask import send_file
+import base64
 
 @functions_framework.http
 def text_to_sound(request):
+    AudioSegment.converter = "ffmpeg"
     request_body = request.json
     sound = create_sound(request_body["notes"], request_body["bpm"])
     if sound is not None:
-        sound.export("/tmp/sound.wav", format="wav")
+        sound.export("/tmp/sound.wav", format="wav", parameters=["-ac", "2", "-ar", "6000"])
         if os.path.isfile("/tmp/sound.wav"):
-            return send_file("/tmp/sound.wav", mimetype="audio/wav")
+            return {"sound": str(base64.b64encode(open("/tmp/sound.wav", "rb").read()))}, 200
         else:
             return "", 500
     else:
@@ -75,5 +76,3 @@ def create_sound(notes, bpm):
         return prev_sound
     else:
         return None
-
-
