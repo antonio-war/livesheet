@@ -1,0 +1,40 @@
+# This is a sample workflow to test or replace with your source code.
+#
+# This workflow passes the current day of the week to the Wikipedia API and
+# returns a list of related Wikipedia articles.
+# The current day of the week (in GMT) is retrieved from a Cloud Function
+# unless you input your own search term (for example, {"searchTerm": "Monday"}).
+main:
+    params: [input]
+    steps:
+    -   setParameters:
+        assign:
+            - image: ${input.image}
+                - bpm: ${input.bpm}
+                -   detectNotes:
+            call: http.post
+            args:
+                url: https://image-to-text-hjmb7rskya-oa.a.run.app
+                body:
+                    image: ${image}
+            result: detectionResponse
+    -   checkDetectionOutput:
+        switch:
+            - condition: ${detectionResponse.code == 200}
+                next: resetParameters
+    -   returnDetectionError:
+        return: ${detectionResponse}
+    -   resetParameters:
+        assign:
+            - image: null
+                - notes: ${detectionResponse.body.notes}
+                -   createSound:
+            call: http.post
+            args:
+                url: https://europe-west6-livesheet-351108.cloudfunctions.net/text-to-sound
+                body:
+                    bpm: ${bpm}
+                    notes: ${notes}
+            result: creationResponse
+    -   returnCreationSuccess:
+        return: ${creationResponse}
